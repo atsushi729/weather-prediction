@@ -106,12 +106,10 @@ std::vector<Candlestick> CandlestickCalculator::computeCandlestickData(const std
         double high = data.high;
         double low = data.low;
 
-        // 日付を "YYYY-01-01" 形式で設定
-        std::ostringstream oss;
-        oss << year << "-01-01";
-        std::string date = oss.str();
+        // 年を "YYYY" 形式で設定
+        std::string yearStr = std::to_string(year);
 
-        Candlestick candle(date, open, high, low, close);
+        Candlestick candle(yearStr, open, high, low, close);
         candlesticks.push_back(candle);
 
         previousAverage = average;
