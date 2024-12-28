@@ -7,13 +7,22 @@
 
 MerkelMain::MerkelMain()
 {
-    // 初期化処理があればここに記述
+    // 固定されたCSVファイル名を設定
+    std::string filename = "../weather_data.csv"; // 必要に応じてパスを変更
+
+    // CSVファイルを読み込む
+    csvData = CSVReader::readCSV(filename);
+    if (csvData.empty()) {
+        std::cerr << "Error: Failed to read CSV data from " << filename << std::endl;
+        // 必要に応じてエラー処理（例: プログラム終了）
+    }
+
+    // 初期時刻の設定（必要に応じて変更）
+    currentTime = "1980-01-01T00:00:00Z";
 }
 
 void MerkelMain::init()
 {
-    currentTime = "1980-01-01T00:00:00Z"; // 初期時刻を設定（必要に応じて変更）
-
     while (true)
     {
         printMenu();
@@ -38,49 +47,57 @@ void MerkelMain::printMenu()
     std::cout << "0: Exit " << std::endl;
 
     std::cout << "============== " << std::endl;
-
-    std::cout << "Current time is: " << currentTime << std::endl;
 }
 
 void MerkelMain::printHelp()
 {
-    std::cout << "Help - Your aim is to compute candlestick data from weather CSV files." << std::endl;
+    std::cout << "Help - Your aim is to compute candlestick data from a fixed weather CSV file." << std::endl;
     std::cout << "Select option 2 to compute candlestick data." << std::endl;
 }
 
 void MerkelMain::computeAndDisplayCandlestickData()
 {
-    std::string filename;
-    std::string countryCode;
+    if (csvData.empty()) {
+        std::cerr << "Error: No CSV data available to compute candlestick data." << std::endl;
+        return;
+    }
 
-    std::cout << "Enter CSV filename (e.g., weather_data.csv): ";
-    std::getline(std::cin, filename);
+    std::string countryCode;
 
     std::cout << "Enter country code (e.g., GB): ";
     std::getline(std::cin, countryCode);
 
-    // CSVファイルを読み込む
-    std::vector<std::vector<std::string>> csvData = CSVReader::readCSV(filename);
-    if (csvData.empty()) {
-        std::cerr << "Failed to read CSV data." << std::endl;
+    // 入力が空でないことを確認
+    if (countryCode.empty()) {
+        std::cerr << "Error: Country code cannot be empty." << std::endl;
         return;
     }
 
     // ローソク足データを計算
     std::vector<Candlestick> candles = CandlestickCalculator::computeCandlestickData(csvData, countryCode);
     if (candles.empty()) {
-        std::cerr << "No candlestick data computed." << std::endl;
+        std::cerr << "No candlestick data computed. Check if the country code is correct and data is available." << std::endl;
         return;
     }
 
-    // 結果を表示
+    std::cout << "Candle data : " << countryCode << std::endl;
+
+    // 40年分のデータを表示
     std::cout << "Date\t\tOpen\tHigh\tLow\tClose" << std::endl;
+    int count = 0;
     for (const auto& candle : candles) {
         std::cout << candle.date << "\t"
                   << std::fixed << std::setprecision(3) << candle.open << "\t"
                   << candle.high << "\t"
                   << candle.low << "\t"
                   << candle.close << std::endl;
+        count++;
+        if (count >= 40) break; // 40年分のデータのみ表示
+    }
+
+    // もし40年に満たない場合の警告
+    if (count < 40) {
+        std::cout << "Warning: Only " << count << " years of data available for country code " << countryCode << "." << std::endl;
     }
 }
 

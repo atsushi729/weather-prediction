@@ -12,20 +12,14 @@ public:
 
 private:
     std::string currentTime;
+    std::vector<std::vector<std::string>> csvData; // CSVデータを保持
 
     void printMenu();
     void printHelp();
-    void printMarketStats();
-    void enterAsk();
-    void enterBid();
-    void printWallet();
-    void gotoNextTimeframe();
+    void computeAndDisplayCandlestickData();
 
     int getUserOption();
     void processUserOption(int userOption);
-
-    // 新規追加: ローソク足データの計算と表示
-    void computeAndDisplayCandlestickData();
 };
 
 #endif // MERKELMAIN_H
