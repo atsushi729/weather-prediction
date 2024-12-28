@@ -16,9 +16,6 @@ MerkelMain::MerkelMain()
         std::cerr << "Error: Failed to read CSV data from " << filename << std::endl;
         // 必要に応じてエラー処理（例: プログラム終了）
     }
-
-    // 初期時刻の設定（必要に応じて変更）
-    currentTime = "1980-01-01T00:00:00Z";
 }
 
 void MerkelMain::init()
