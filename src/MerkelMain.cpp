@@ -83,10 +83,11 @@ void MerkelMain::computeAndDisplayCandlestickData()
     std::cout << "Candle data : " << countryCode << std::endl;
 
     // 40年分のデータを表示
-    std::cout << "Date\t\tOpen\tHigh\tLow\tClose" << std::endl;
+    std::cout << "Date\tOpen\tHigh\tLow\tClose" << std::endl;
     int count = 0;
     for (const auto& candle : candles) {
-        std::cout << candle.date << "\t"
+        std::string year = candle.date.substr(0, 4);
+        std::cout << year << "\t"
                   << std::fixed << std::setprecision(3) << candle.open << "\t"
                   << candle.high << "\t"
                   << candle.low << "\t"
