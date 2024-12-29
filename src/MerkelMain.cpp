@@ -6,20 +6,27 @@
 #include <limits>
 #include <cmath>       // std::floor
 #include <algorithm>   // std::min / std::max
-#include <string>
+#include <sstream>     // std::ostringstream
 
 // CSVReader, CandlestickCalculator, Candlestick
 #include "CSVReader.h"
 #include "CandlestickCalculator.h"
 #include "Candlestick.h"
 
-/*
-    テキストベースのローソク足描画において、
-    横方向の列幅を固定するための設定とヘルパー関数
-*/
+// ─────────────────────────────────────────────
+// 列幅・縦軸幅等の設定
+// ─────────────────────────────────────────────
+/** 
+ * @brief キャンドル1本あたりの横幅 (ASCIIアートのカラム幅)  
+ *        例: 4 なら1本を4文字ぶんで描画 
+ */
+static const int COLUMN_WIDTH = 5;  
 
-// 列幅を決めておく（1キャンドルあたり横4文字）
-static const int COLUMN_WIDTH = 5;
+/**
+ * @brief 縦軸に表示するラベル部分の幅  
+ *        例: 8 なら「   23.0」など右寄せするのにちょうどよい
+ */
+static const int Y_LABEL_WIDTH = 8;  
 
 /**
  * @brief 固定幅で文字列を返すユーティリティ関数
@@ -27,7 +34,7 @@ static const int COLUMN_WIDTH = 5;
  * @param[in] width 固定幅
  * @return 幅を超える場合は切り取り、未満ならスペースで埋める
  */
-std::string fixedWidth(const std::string& str, int width)
+static std::string fixedWidth(const std::string& str, int width)
 {
     if ((int)str.size() >= width) {
         // 指定幅より大きければ切り取る
@@ -42,7 +49,7 @@ std::string fixedWidth(const std::string& str, int width)
  */
 MerkelMain::MerkelMain()
 {
-    std::string filename = "../weather_data.csv"; // 必要に応じてパス変更
+    std::string filename = "../weather_data.csv"; // 必要に応じてパスを変更
     csvData = CSVReader::readCSV(filename);
     if (csvData.empty()) {
         std::cerr << "Error: Failed to read CSV data from " << filename << std::endl;
@@ -78,7 +85,7 @@ void MerkelMain::printMenu()
 {
     std::cout << "1: Print help\n";
     std::cout << "2: Compute Candlestick Data\n";
-    std::cout << "3: Plot Candlestick Data\n";
+    std::cout << "3: Plot Candlestick Data (Compute behind the scenes)\n";
     std::cout << "0: Exit\n";
     std::cout << "==============\n";
 }
@@ -234,7 +241,7 @@ void MerkelMain::computeCandlestickAndPlot()
 }
 
 //=============================================================================
-// (3) テキストベースのキャンドルスティック描画関数
+// (3) 縦軸ラベル付き：テキストベースのキャンドルスティック描画
 //=============================================================================
 void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount)
 {
@@ -255,8 +262,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
     }
 
     // グラフの縦の高さ
-    const int chartHeight = 20;
-
+    const int chartHeight = 20; 
     double range = maxHigh - minLow;
     if (range <= 0.0) {
         std::cout << "Invalid range for plotting." << std::endl;
@@ -266,21 +272,33 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
     // スケーリング係数
     double scale = (double)chartHeight / range;
 
-    // --------------------
     // (a) グラフ本体 (上から下へ)
-    // --------------------
     for (int row = chartHeight; row >= 0; --row)
     {
-        // 1行ぶんの出力文字列を構築
-        std::string line;
-        // COLUMN_WIDTH=4 なら displayCount*4ぶんを確保しておく
-        line.reserve(displayCount * COLUMN_WIDTH);
+        // 1) 縦軸ラベルを計算
+        //    row が大きいほど値が大きくなる
+        double actualValue = minLow + (row / scale);
 
+        // 例: 小数第1位まで表示
+        std::ostringstream yLabelSS;
+        yLabelSS << std::fixed << std::setprecision(1) << actualValue;
+        std::string yLabelStr = yLabelSS.str();
+
+        // 幅を合わせて右寄せ (Y_LABEL_WIDTH=8)
+        if ((int)yLabelStr.size() < Y_LABEL_WIDTH) {
+            yLabelStr = std::string(Y_LABEL_WIDTH - yLabelStr.size(), ' ') + yLabelStr;
+        }
+
+        // 左端に 「縦軸ラベル + ' | '」を付与
+        // 例: "   23.5 | "
+        std::string line = yLabelStr + " | ";
+
+        // 2) 各キャンドルを描画
         for (int i = 0; i < displayCount; ++i) {
-            const double open  = candles[i].open;
-            const double close = candles[i].close;
-            const double high  = candles[i].high;
-            const double low   = candles[i].low;
+            double open  = candles[i].open;
+            double close = candles[i].close;
+            double high  = candles[i].high;
+            double low   = candles[i].low;
 
             int scaledHigh  = (int)std::floor((high  - minLow) * scale);
             int scaledLow   = (int)std::floor((low   - minLow) * scale);
@@ -292,7 +310,8 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
 
             // row がキャンドル範囲外の場合は空白列
             if (row > scaledHigh || row < scaledLow) {
-                line += std::string(COLUMN_WIDTH, ' '); // 4文字スペース
+                // COLUMN_WIDTH=4分のスペース
+                line += std::string(COLUMN_WIDTH, ' ');
                 continue;
             }
 
@@ -322,11 +341,10 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
                 cell = " | ";
             }
             else {
-                // 範囲外
                 cell = "    ";
             }
 
-            // 列幅4に合わせて追加
+            // 列幅4に合わせる
             line += fixedWidth(cell, COLUMN_WIDTH);
         }
 
@@ -334,22 +352,19 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         std::cout << line << std::endl;
     }
 
-    // --------------------
     // (b) X軸のラベル (年)
-    // --------------------
-    // ちょうど上のローソク列と揃うように、同じだけループ
-    std::string xAxis;
-    xAxis.reserve(displayCount * COLUMN_WIDTH);
+    //    縦軸ラベル幅 + ' | ' と同じだけ左にスペースを入れる
+    //    → Y_LABEL_WIDTH + 3 (「 | 」は2文字+空白1かもしれませんが調整)
+    std::cout << std::string(Y_LABEL_WIDTH, ' ') << "   "; 
 
+    // ここから先は各キャンドルの日付 (例: 年4文字) を固定幅4文字で出す
+    //   → 上のキャンドルとちょうど縦に揃う
     for (int i = 0; i < displayCount; ++i) {
-        // 年文字列(先頭4文字)
         std::string yearStr = "----";
         if (candles[i].date.size() >= 4) {
             yearStr = candles[i].date.substr(0, 4);
         }
-        // 列幅を固定して追加
-        xAxis += fixedWidth(yearStr, COLUMN_WIDTH);
+        std::cout << fixedWidth(yearStr, COLUMN_WIDTH);
     }
-
-    std::cout << xAxis << std::endl;
+    std::cout << std::endl;
 }
