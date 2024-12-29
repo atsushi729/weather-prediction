@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MERKELMAIN_H
+#define MERKELMAIN_H
 
 #include <vector>
 #include <string>
@@ -16,7 +17,7 @@ class MerkelMain
 public:
     // コンストラクタ
     MerkelMain();
-    
+
     // メインループ開始
     void init();
 
@@ -30,6 +31,12 @@ private:
     // ユーザーの選択肢に応じた処理
     void processUserOption(int userOption);
 
+    // ユーザーから国コードを取得
+    std::string getCountryCodeFromUser();
+
+    // CSVデータから Candlestick を計算
+    std::vector<Candlestick> computeCandlestickDataForCountry(const std::string& countryCode);
+
     // --------------------------
     // (1) ローソク足の計算・一覧表示 (メニュー2)
     // --------------------------
@@ -42,12 +49,11 @@ private:
 
     // --------------------------
     // (3) 計算済みローソク足のテキストベース描画
-    //     ここに「縦軸ラベル」の表示を追加
     // --------------------------
     void plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount);
 
     // --------------------------
-    // ヘルパー変数など
+    // メンバ変数
     // --------------------------
     // 直近で計算したローソク足データ
     std::vector<Candlestick> lastComputedCandles;
@@ -55,3 +61,5 @@ private:
     // CSVの生データ
     std::vector<std::vector<std::string>> csvData;
 };
+
+#endif // MERKELMAIN_H

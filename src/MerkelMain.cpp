@@ -8,45 +8,36 @@
 #include <algorithm>   // std::min / std::max
 #include <sstream>     // std::ostringstream
 
-// CSVReader, CandlestickCalculator, Candlestick
 #include "CSVReader.h"
 #include "CandlestickCalculator.h"
 #include "Candlestick.h"
 
-// ─────────────────────────────────────────────
-// 列幅・縦軸幅等の設定
-// ─────────────────────────────────────────────
-/** 
- * @brief キャンドル1本あたりの横幅 (ASCIIアートのカラム幅)  
- *        例: 4 なら1本を4文字ぶんで描画 
- */
-static const int COLUMN_WIDTH = 5;
+namespace {
+    /** 
+     * @brief キャンドル1本あたりの横幅 (ASCIIアートのカラム幅)  
+     */
+    const int COLUMN_WIDTH = 5;
 
-/**
- * @brief 縦軸に表示するラベル部分の幅  
- *        例: 8 なら「   23.0」など右寄せするのにちょうどよい
- */
-static const int Y_LABEL_WIDTH = 8;  
+    /**
+     * @brief 縦軸に表示するラベル部分の幅
+     */
+    const int Y_LABEL_WIDTH = 8;  
 
-/**
- * @brief 固定幅で文字列を返すユーティリティ関数
- * @param[in] str   変換対象の文字列
- * @param[in] width 固定幅
- * @return 幅を超える場合は切り取り、未満ならスペースで埋める
- */
-static std::string fixedWidth(const std::string& str, int width)
-{
-    if ((int)str.size() >= width) {
-        // 指定幅より大きければ切り取る
-        return str.substr(0, width);
+    /**
+     * @brief 固定幅で文字列を返すユーティリティ関数
+     */
+    std::string fixedWidth(const std::string& str, int width)
+    {
+        if (static_cast<int>(str.size()) >= width) {
+            return str.substr(0, width);
+        }
+        return str + std::string(width - str.size(), ' ');
     }
-    // 小さい場合はスペースでパディング
-    return str + std::string(width - str.size(), ' ');
 }
 
-/**
- * @brief コンストラクタ: CSVファイルを読み込む
- */
+// ─────────────────────────────────────────────
+// コンストラクタ
+// ─────────────────────────────────────────────
 MerkelMain::MerkelMain()
 {
     std::string filename = "../weather_data.csv"; // 必要に応じてパスを変更
@@ -57,30 +48,30 @@ MerkelMain::MerkelMain()
     }
 }
 
-/**
- * @brief メインループ
- */
+// ─────────────────────────────────────────────
+// メインループ
+// ─────────────────────────────────────────────
 void MerkelMain::init()
 {
     while (true)
     {
         printMenu();
-        int input = getUserOption();
-        if (input == -1) {
+        int selectedOption = getUserOption();
+        if (selectedOption == -1) {
             std::cout << "Error reading input. Exiting." << std::endl;
             break;
         }
-        if (input == 0) {
+        if (selectedOption == 0) {
             std::cout << "Exiting application." << std::endl;
             break;
         }
-        processUserOption(input);
+        processUserOption(selectedOption);
     }
 }
 
-/**
- * @brief メニュー表示
- */
+// ─────────────────────────────────────────────
+// メニュー表示
+// ─────────────────────────────────────────────
 void MerkelMain::printMenu()
 {
     std::cout << "1: Print help\n";
@@ -90,9 +81,9 @@ void MerkelMain::printMenu()
     std::cout << "==============\n";
 }
 
-/**
- * @brief ヘルプ表示
- */
+// ─────────────────────────────────────────────
+// ヘルプ表示
+// ─────────────────────────────────────────────
 void MerkelMain::printHelp()
 {
     std::cout << "Help - Your aim is to compute candlestick data from a fixed weather CSV file.\n";
@@ -100,9 +91,9 @@ void MerkelMain::printHelp()
     std::cout << "Select option 3 to compute + immediately plot candlestick data.\n";
 }
 
-/**
- * @brief ユーザー入力を取得し int に変換
- */
+// ─────────────────────────────────────────────
+// 入力取得
+// ─────────────────────────────────────────────
 int MerkelMain::getUserOption()
 {
     int userOption = 0;
@@ -119,9 +110,9 @@ int MerkelMain::getUserOption()
     return userOption;
 }
 
-/**
- * @brief メニュー選択に応じた処理
- */
+// ─────────────────────────────────────────────
+// 入力値を元に処理振り分け
+// ─────────────────────────────────────────────
 void MerkelMain::processUserOption(int userOption)
 {
     if (userOption == -1)
@@ -138,11 +129,11 @@ void MerkelMain::processUserOption(int userOption)
             printHelp();
             break;
         case 2:
-            // 「2: Compute」 -> 計算+一覧表示
+            // (1) ローソク足の計算 + 一覧表示
             computeAndDisplayCandlestickData();
             break;
         case 3:
-            // 「3: Plot」 -> 裏で計算しつつ即プロット
+            // (2) ローソク足の計算 ＋ 即時テキスト描画
             computeCandlestickAndPlot();
             break;
         default:
@@ -151,41 +142,54 @@ void MerkelMain::processUserOption(int userOption)
     }
 }
 
-//=============================================================================
-// (1) case 2: ローソク足の計算 + 一覧表示
-//=============================================================================
-void MerkelMain::computeAndDisplayCandlestickData()
+// ─────────────────────────────────────────────
+// ユーザーから国コードを取得
+// ─────────────────────────────────────────────
+std::string MerkelMain::getCountryCodeFromUser()
 {
-    if (csvData.empty()) {
-        std::cerr << "Error: No CSV data available to compute candlestick data." << std::endl;
-        return;
-    }
-
     std::string countryCode;
     std::cout << "Enter country code (e.g., GB): ";
     std::getline(std::cin, countryCode);
-
     if (countryCode.empty()) {
         std::cerr << "Error: Country code cannot be empty." << std::endl;
-        return;
+    }
+    return countryCode;
+}
+
+// ─────────────────────────────────────────────
+// CSVデータから Candlestick を計算
+// ─────────────────────────────────────────────
+std::vector<Candlestick> MerkelMain::computeCandlestickDataForCountry(const std::string& countryCode)
+{
+    if (csvData.empty()) {
+        std::cerr << "Error: No CSV data available to compute candlestick data." << std::endl;
+        return {};
+    }
+    return CandlestickCalculator::computeCandlestickData(csvData, countryCode);
+}
+
+// ─────────────────────────────────────────────
+// (1) ローソク足の計算 + 一覧表示
+// ─────────────────────────────────────────────
+void MerkelMain::computeAndDisplayCandlestickData()
+{
+    std::string countryCode = getCountryCodeFromUser();
+    if (countryCode.empty()) {
+        return; // 入力エラー
     }
 
-    // ローソク足データを計算
-    std::vector<Candlestick> candles =
-        CandlestickCalculator::computeCandlestickData(csvData, countryCode);
-
+    std::vector<Candlestick> candles = computeCandlestickDataForCountry(countryCode);
     if (candles.empty()) {
         std::cerr << "No candlestick data computed. "
                   << "Check if the country code is correct and data is available.\n";
         return;
     }
 
-    // 計算結果をクラスメンバに格納
     lastComputedCandles = candles;
 
-    // 以下、計算結果のテーブル表示
     std::cout << "Candle data : " << countryCode << std::endl;
     std::cout << "Date\tOpen\tHigh\tLow\tClose\n";
+
     int count = 0;
     for (const auto& candle : candles) {
         std::string year = candle.date.substr(0, 4);
@@ -194,62 +198,50 @@ void MerkelMain::computeAndDisplayCandlestickData()
                   << candle.high << "\t"
                   << candle.low << "\t"
                   << candle.close << std::endl;
-        count++;
-        if (count >= 40) break; // 40個で打ち切り
+
+        if (++count >= 40) break;
     }
+
     if (count < 40) {
         std::cout << "Warning: Only " << count << " years of data available for country code "
                   << countryCode << "." << std::endl;
     }
 }
 
-//=============================================================================
-// (2) case 3: ローソク足の計算（裏で実施）＋即時テキストプロット
-//=============================================================================
+// ─────────────────────────────────────────────
+// (2) ローソク足の計算 ＋ 即時テキスト描画
+// ─────────────────────────────────────────────
 void MerkelMain::computeCandlestickAndPlot()
 {
-    if (csvData.empty()) {
-        std::cerr << "Error: No CSV data available to compute candlestick data." << std::endl;
-        return;
-    }
-
-    std::string countryCode;
-    std::cout << "Enter country code (e.g., GB): ";
-    std::getline(std::cin, countryCode);
-
+    std::string countryCode = getCountryCodeFromUser();
     if (countryCode.empty()) {
-        std::cerr << "Error: Country code cannot be empty." << std::endl;
         return;
     }
 
-    // Candlestickを計算
-    std::vector<Candlestick> candles =
-        CandlestickCalculator::computeCandlestickData(csvData, countryCode);
-
+    std::vector<Candlestick> candles = computeCandlestickDataForCountry(countryCode);
     if (candles.empty()) {
         std::cerr << "No candlestick data computed. "
                   << "Check if the country code is correct and data is available.\n";
         return;
     }
 
-    // 計算結果を保持
     lastComputedCandles = candles;
 
-    // テキストベースでのプロット
     std::cout << "\n=== Text-based Candlestick Chart (up to 40 candles) ===\n";
     plotCandlestickData(lastComputedCandles, 40);
 }
 
-//=============================================================================
-// (3) 縦軸ラベル付き：テキストベースのキャンドルスティック描画
-//=============================================================================
+// ─────────────────────────────────────────────
+// (3) テキストでキャンドルスティックを描画
+// ─────────────────────────────────────────────
 void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount)
 {
     if (candles.empty()) {
         std::cout << "No data to plot." << std::endl;
         return;
     }
-    int displayCount = std::min((int)candles.size(), maxDisplayCount);
+    int displayCount = std::min(static_cast<int>(candles.size()), maxDisplayCount);
+
     // minLow, maxHigh を算出
     double minLow = std::numeric_limits<double>::max();
     double maxHigh = std::numeric_limits<double>::lowest();
@@ -257,71 +249,84 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         minLow = std::min(minLow, candles[i].low);
         maxHigh = std::max(maxHigh, candles[i].high);
     }
+
     const int chartHeight = 20;
     double range = maxHigh - minLow;
     if (range <= 0.0) {
         std::cout << "Invalid range for plotting." << std::endl;
         return;
     }
-    double scale = (double)chartHeight / range;
+    double scale = static_cast<double>(chartHeight) / range;
+
     // グラフ本体 (上から下へ)
     for (int row = chartHeight; row >= 0; --row)
     {
-        // Y軸ラベルを出力
+        // 左端にY軸ラベル
         double actualValue = minLow + (row / scale);
         std::ostringstream yLabelSS;
         yLabelSS << std::fixed << std::setprecision(1) << actualValue;
         std::string yLabelStr = yLabelSS.str();
-        if ((int)yLabelStr.size() < Y_LABEL_WIDTH) {
+        if (static_cast<int>(yLabelStr.size()) < Y_LABEL_WIDTH) {
             yLabelStr = std::string(Y_LABEL_WIDTH - yLabelStr.size(), ' ') + yLabelStr;
         }
         std::cout << yLabelStr << " | ";
-        // 各キャンドルを処理
+
+        // キャンドル描画
         for (int i = 0; i < displayCount; ++i)
         {
-            double open = candles[i].open;
+            double open  = candles[i].open;
             double close = candles[i].close;
-            double high = candles[i].high;
-            double low = candles[i].low;
-            int scaledHigh = (int)std::floor((high - minLow) * scale);
-            int scaledLow = (int)std::floor((low - minLow) * scale);
-            int scaledOpen = (int)std::floor((open - minLow) * scale);
-            int scaledClose = (int)std::floor((close - minLow) * scale);
-            int boxTop = std::max(scaledOpen, scaledClose);
+            double high  = candles[i].high;
+            double low   = candles[i].low;
+
+            int scaledHigh  = static_cast<int>(std::floor((high  - minLow) * scale));
+            int scaledLow   = static_cast<int>(std::floor((low   - minLow) * scale));
+            int scaledOpen  = static_cast<int>(std::floor((open  - minLow) * scale));
+            int scaledClose = static_cast<int>(std::floor((close - minLow) * scale));
+
+            int boxTop    = std::max(scaledOpen, scaledClose);
             int boxBottom = std::min(scaledOpen, scaledClose);
+
+            // ローソク足描画範囲外
             if (row > scaledHigh || row < scaledLow) {
-                std::cout << "     ";  // COLUMN_WIDTH = 5 のため
+                std::cout << std::string(COLUMN_WIDTH, ' ');
                 continue;
             }
-            bool isWickRange = (row <= scaledHigh && row >= boxTop) ||
-                              (row <= boxBottom && row >= scaledLow);
-            bool isBoxRange = (row <= boxTop && row >= boxBottom);
+
+            bool isWickRange = ((row <= scaledHigh) && (row >= boxTop)) ||
+                               ((row <= boxBottom) && (row >= scaledLow));
+            bool isBoxRange  = (row <= boxTop && row >= boxBottom);
+
             if (row == scaledHigh) {
+                // 上ヒゲの先端
                 std::cout << "  ^  ";
             }
             else if (row == scaledLow) {
+                // 下ヒゲの先端
                 std::cout << "  v  ";
             }
             else if (isBoxRange) {
-                // ボックス部分の色を設定
-                if (close >= open) {  // 陽線
-                    std::cout << "\033[32m";  // 緑色
-                } else {            // 陰線
-                    std::cout << "\033[31m";  // 赤色
+                // ボックス本体
+                if (close >= open) { // 陽線
+                    std::cout << "\033[32m";
+                } else {             // 陰線
+                    std::cout << "\033[31m";
                 }
-                std::cout << " [#] ";  // 中央揃えに変更
-                std::cout << "\033[0m";  // 色をリセット
+                std::cout << " [#] ";
+                std::cout << "\033[0m"; // 色リセット
             }
             else if (isWickRange) {
+                // ヒゲ部分
                 std::cout << "  |  ";
             }
             else {
-                std::cout << "     ";
+                std::cout << std::string(COLUMN_WIDTH, ' ');
             }
         }
         std::cout << std::endl;
     }
-    // X軸のラベル (年)
+
+    // X軸ラベル (年)
     std::cout << std::string(Y_LABEL_WIDTH, ' ') << "  ";
     for (int i = 0; i < displayCount; ++i) {
         std::string yearStr = "----";
