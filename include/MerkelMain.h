@@ -1,25 +1,32 @@
-#ifndef MERKELMAIN_H
-#define MERKELMAIN_H
-
-#include <string>
+#pragma once
 #include <vector>
+#include <string>
 #include "Candlestick.h"
 
-class MerkelMain {
+class MerkelMain
+{
 public:
     MerkelMain();
     void init();
 
 private:
-    std::string currentTime;
-    std::vector<std::vector<std::string>> csvData; // CSVデータを保持
-
     void printMenu();
     void printHelp();
-    void computeAndDisplayCandlestickData();
-
     int getUserOption();
     void processUserOption(int userOption);
-};
 
-#endif // MERKELMAIN_H
+    // ローソク足データの計算・表示関数
+    void computeAndDisplayCandlestickData();
+
+    // ▼ 新メソッド: 「3」で裏側の計算＋即プロットをする関数
+    void computeCandlestickAndPlot();
+
+    // テキストベースのキャンドルスティック描画関数
+    void plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount);
+
+    // --- 計算結果を保持するための変数を追加 ---
+    std::vector<Candlestick> lastComputedCandles;
+
+    // CSVデータ格納用
+    std::vector<std::vector<std::string>> csvData;
+};
