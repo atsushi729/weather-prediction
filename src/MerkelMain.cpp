@@ -20,7 +20,7 @@
  * @brief キャンドル1本あたりの横幅 (ASCIIアートのカラム幅)  
  *        例: 4 なら1本を4文字ぶんで描画 
  */
-static const int COLUMN_WIDTH = 5;  
+static const int COLUMN_WIDTH = 5;
 
 /**
  * @brief 縦軸に表示するラベル部分の幅  
@@ -249,116 +249,80 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         std::cout << "No data to plot." << std::endl;
         return;
     }
-
-    // 表示件数を決定
     int displayCount = std::min((int)candles.size(), maxDisplayCount);
-
     // minLow, maxHigh を算出
-    double minLow  = std::numeric_limits<double>::max();
+    double minLow = std::numeric_limits<double>::max();
     double maxHigh = std::numeric_limits<double>::lowest();
     for (int i = 0; i < displayCount; ++i) {
-        minLow  = std::min(minLow,  candles[i].low);
+        minLow = std::min(minLow, candles[i].low);
         maxHigh = std::max(maxHigh, candles[i].high);
     }
-
-    // グラフの縦の高さ
-    const int chartHeight = 20; 
+    const int chartHeight = 20;
     double range = maxHigh - minLow;
     if (range <= 0.0) {
         std::cout << "Invalid range for plotting." << std::endl;
         return;
     }
-
-    // スケーリング係数
     double scale = (double)chartHeight / range;
-
-    // (a) グラフ本体 (上から下へ)
+    // グラフ本体 (上から下へ)
     for (int row = chartHeight; row >= 0; --row)
     {
-        // 1) 縦軸ラベルを計算
-        //    row が大きいほど値が大きくなる
+        // Y軸ラベルを出力
         double actualValue = minLow + (row / scale);
-
-        // 例: 小数第1位まで表示
         std::ostringstream yLabelSS;
         yLabelSS << std::fixed << std::setprecision(1) << actualValue;
         std::string yLabelStr = yLabelSS.str();
-
-        // 幅を合わせて右寄せ (Y_LABEL_WIDTH=8)
         if ((int)yLabelStr.size() < Y_LABEL_WIDTH) {
             yLabelStr = std::string(Y_LABEL_WIDTH - yLabelStr.size(), ' ') + yLabelStr;
         }
-
-        // 左端に 「縦軸ラベル + ' | '」を付与
-        // 例: "   23.5 | "
-        std::string line = yLabelStr + " | ";
-
-        // 2) 各キャンドルを描画
-        for (int i = 0; i < displayCount; ++i) {
-            double open  = candles[i].open;
+        std::cout << yLabelStr << " | ";
+        // 各キャンドルを処理
+        for (int i = 0; i < displayCount; ++i)
+        {
+            double open = candles[i].open;
             double close = candles[i].close;
-            double high  = candles[i].high;
-            double low   = candles[i].low;
-
-            int scaledHigh  = (int)std::floor((high  - minLow) * scale);
-            int scaledLow   = (int)std::floor((low   - minLow) * scale);
-            int scaledOpen  = (int)std::floor((open  - minLow) * scale);
+            double high = candles[i].high;
+            double low = candles[i].low;
+            int scaledHigh = (int)std::floor((high - minLow) * scale);
+            int scaledLow = (int)std::floor((low - minLow) * scale);
+            int scaledOpen = (int)std::floor((open - minLow) * scale);
             int scaledClose = (int)std::floor((close - minLow) * scale);
-
-            int boxTop    = std::max(scaledOpen, scaledClose);
+            int boxTop = std::max(scaledOpen, scaledClose);
             int boxBottom = std::min(scaledOpen, scaledClose);
-
-            // row がキャンドル範囲外の場合は空白列
             if (row > scaledHigh || row < scaledLow) {
-                // COLUMN_WIDTH=4分のスペース
-                line += std::string(COLUMN_WIDTH, ' ');
+                std::cout << "     ";  // COLUMN_WIDTH = 5 のため
                 continue;
             }
-
-            // ヒゲ (wick) の範囲か？
             bool isWickRange = (row <= scaledHigh && row >= boxTop) ||
-                               (row <= boxBottom && row >= scaledLow);
-
-            // ボックスの範囲か？
+                              (row <= boxBottom && row >= scaledLow);
             bool isBoxRange = (row <= boxTop && row >= boxBottom);
-
-            // 出力文字列(1セル)
-            std::string cell;
             if (row == scaledHigh) {
-                // 上ヒゲの最上部
-                cell = " ^ ";
+                std::cout << "  ^  ";
             }
             else if (row == scaledLow) {
-                // 下ヒゲの最下部
-                cell = " v ";
+                std::cout << "  v  ";
             }
             else if (isBoxRange) {
-                // 本体ボックス
-                cell = "[ ]";
+                // ボックス部分の色を設定
+                if (close >= open) {  // 陽線
+                    std::cout << "\033[32m";  // 緑色
+                } else {            // 陰線
+                    std::cout << "\033[31m";  // 赤色
+                }
+                std::cout << " [#] ";  // 中央揃えに変更
+                std::cout << "\033[0m";  // 色をリセット
             }
             else if (isWickRange) {
-                // ヒゲ部分
-                cell = " | ";
+                std::cout << "  |  ";
             }
             else {
-                cell = "    ";
+                std::cout << "     ";
             }
-
-            // 列幅4に合わせる
-            line += fixedWidth(cell, COLUMN_WIDTH);
         }
-
-        // 1行出力
-        std::cout << line << std::endl;
+        std::cout << std::endl;
     }
-
-    // (b) X軸のラベル (年)
-    //    縦軸ラベル幅 + ' | ' と同じだけ左にスペースを入れる
-    //    → Y_LABEL_WIDTH + 3 (「 | 」は2文字+空白1かもしれませんが調整)
-    std::cout << std::string(Y_LABEL_WIDTH, ' ') << "   "; 
-
-    // ここから先は各キャンドルの日付 (例: 年4文字) を固定幅4文字で出す
-    //   → 上のキャンドルとちょうど縦に揃う
+    // X軸のラベル (年)
+    std::cout << std::string(Y_LABEL_WIDTH, ' ') << "  ";
     for (int i = 0; i < displayCount; ++i) {
         std::string yearStr = "----";
         if (candles[i].date.size() >= 4) {
