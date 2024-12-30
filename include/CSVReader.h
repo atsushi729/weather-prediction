@@ -6,10 +6,10 @@
 
 class CSVReader {
 public:
-    // CSVファイルを読み込み、行ごとのセルを格納した2次元ベクターを返す
+    // Read CSV file and return data as a 2D vector
     static std::vector<std::vector<std::string>> readCSV(const std::string& filename);
 
-    // 文字列を指定したデリミタで分割する
+    // Tokenise a string based on a delimiter
     static std::vector<std::string> tokenise(const std::string& str, char delimiter);
 };
 

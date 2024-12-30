@@ -4,9 +4,9 @@
 #include <exception>
 #include <iomanip>
 #include <limits>
-#include <cmath>       // std::floor
-#include <algorithm>   // std::min / std::max
-#include <sstream>     // std::ostringstream
+#include <cmath>
+#include <algorithm>
+#include <sstream>
 #include <map>
 
 #include "CSVReader.h"
@@ -15,17 +15,17 @@
 
 namespace {
     /** 
-     * @brief キャンドル1本あたりの横幅 (ASCIIアートのカラム幅)  
+     * @brief Width per candlestick (ASCII art column width)  
      */
     const int COLUMN_WIDTH = 5;
 
     /**
-     * @brief 縦軸に表示するラベル部分の幅
+     * @brief Width of the label part displayed on the Y-axis
      */
     const int Y_LABEL_WIDTH = 8;  
 
     /**
-     * @brief 固定幅で文字列を返すユーティリティ関数
+     * @brief Utility function to return a string with fixed width
      */
     std::string fixedWidth(const std::string& str, int width)
     {
@@ -37,20 +37,19 @@ namespace {
 }
 
 // ─────────────────────────────────────────────
-// コンストラクタ
+// Constructor
 // ─────────────────────────────────────────────
 MerkelMain::MerkelMain()
 {
-    std::string filename = "../weather_data.csv"; // 必要に応じてパスを変更
+    std::string filename = "../weather_data.csv";
     csvData = CSVReader::readCSV(filename);
     if (csvData.empty()) {
         std::cerr << "Error: Failed to read CSV data from " << filename << std::endl;
-        // 必要に応じてエラー処理
     }
 }
 
 // ─────────────────────────────────────────────
-// メインループ
+// Main Loop
 // ─────────────────────────────────────────────
 void MerkelMain::init()
 {
@@ -71,7 +70,7 @@ void MerkelMain::init()
 }
 
 // ─────────────────────────────────────────────
-// メニュー表示
+// Display Menu
 // ─────────────────────────────────────────────
 void MerkelMain::printMenu()
 {
@@ -83,8 +82,9 @@ void MerkelMain::printMenu()
     std::cout << "0: Exit\n";
     std::cout << "==============\n";
 }
+
 // ─────────────────────────────────────────────
-// ヘルプ表示
+// Display Help
 // ─────────────────────────────────────────────
 void MerkelMain::printHelp()
 {
@@ -94,7 +94,7 @@ void MerkelMain::printHelp()
 }
 
 // ─────────────────────────────────────────────
-// 入力取得
+// Get User Input
 // ─────────────────────────────────────────────
 int MerkelMain::getUserOption()
 {
@@ -106,14 +106,14 @@ int MerkelMain::getUserOption()
         userOption = std::stoi(line);
     }
     catch (const std::exception&) {
-        userOption = -1; // エラーを示す
+        userOption = -1; // Indicates error
     }
     std::cout << "You chose: " << userOption << std::endl;
     return userOption;
 }
 
 // ─────────────────────────────────────────────
-// 入力値を元に処理振り分け
+// Process User Option Based on Input
 // ─────────────────────────────────────────────
 void MerkelMain::processUserOption(int userOption)
 {
@@ -128,23 +128,23 @@ void MerkelMain::processUserOption(int userOption)
             // Exit
             break;
         case 1:
-            // (1) ヘルプ表示
+            // (1) Display Help
             printHelp();
             break;
         case 2:
-            // (2) ローソク足の計算 + 一覧表示
+            // (2) Compute Candlestick Data + Display List
             computeAndDisplayCandlestickData();
             break;
         case 3:
-            // (3) ローソク足の計算 ＋ 即時テキスト描画
+            // (3) Compute Candlestick Data + Immediate Text Plotting
             computeCandlestickAndPlot();
             break;
         case 4:
-            // (4) 縦型のヒストグラム表示
+            // (4) Display Vertical Histogram
             showYearlyHistogram();
             break;
         case 5:
-            // (5) 将来の気温予測 (単回帰分析)
+            // (5) Predict Future Temperature (Linear Regression)
             predictFutureTemperature();
             break;
         default:
@@ -154,7 +154,7 @@ void MerkelMain::processUserOption(int userOption)
 }
 
 // ─────────────────────────────────────────────
-// ユーザーから国コードを取得
+// Get Country Code from User
 // ─────────────────────────────────────────────
 std::string MerkelMain::getCountryCodeFromUser()
 {
@@ -167,10 +167,9 @@ std::string MerkelMain::getCountryCodeFromUser()
     return countryCode;
 }
 
-
 int MerkelMain::getDataTypeFromUser()
 {
-    // データタイプ選択
+    // Select Data Type
     std::cout << "1: Average Temperature\n"
               << "2: Max Temperature\n"
               << "3: Min Temperature\n"
@@ -181,13 +180,14 @@ int MerkelMain::getDataTypeFromUser()
     try {
         dataType = std::stoi(line);
     } catch(...) {
-        dataType = 1; // デフォルト
+        dataType = 1; // Default
     }
     if (dataType < 1 || dataType > 3) dataType = 1;
     return dataType;
 }
+
 // ─────────────────────────────────────────────
-// CSVデータから Candlestick を計算
+// Compute Candlestick Data from CSV for a Given Country
 // ─────────────────────────────────────────────
 std::vector<Candlestick> MerkelMain::computeCandlestickDataForCountry(const std::string& countryCode)
 {
@@ -199,13 +199,13 @@ std::vector<Candlestick> MerkelMain::computeCandlestickDataForCountry(const std:
 }
 
 // ─────────────────────────────────────────────
-// (1) ローソク足の計算 + 一覧表示
+// (1) Compute and Display Candlestick Data
 // ─────────────────────────────────────────────
 void MerkelMain::computeAndDisplayCandlestickData()
 {
     std::string countryCode = getCountryCodeFromUser();
     if (countryCode.empty()) {
-        return; // 入力エラー
+        return; // Input error
     }
 
     std::vector<Candlestick> candles = computeCandlestickDataForCountry(countryCode);
@@ -239,7 +239,7 @@ void MerkelMain::computeAndDisplayCandlestickData()
 }
 
 // ─────────────────────────────────────────────
-// (2) ローソク足の計算 ＋ 即時テキスト描画
+// (2) Compute Candlestick Data + Immediate Text Plotting
 // ─────────────────────────────────────────────
 void MerkelMain::computeCandlestickAndPlot()
 {
@@ -262,7 +262,7 @@ void MerkelMain::computeCandlestickAndPlot()
 }
 
 // ─────────────────────────────────────────────
-// (3) テキストでキャンドルスティックを描画
+// (3) Plot Candlestick Data as Text
 // ─────────────────────────────────────────────
 void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount)
 {
@@ -272,7 +272,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
     }
     int displayCount = std::min(static_cast<int>(candles.size()), maxDisplayCount);
 
-    // minLow, maxHigh を算出
+    // Calculate minLow and maxHigh
     double minLow = std::numeric_limits<double>::max();
     double maxHigh = std::numeric_limits<double>::lowest();
     for (int i = 0; i < displayCount; ++i) {
@@ -288,10 +288,10 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
     }
     double scale = static_cast<double>(chartHeight) / range;
 
-    // グラフ本体 (上から下へ)
+    // Main chart body (from top to bottom)
     for (int row = chartHeight; row >= 0; --row)
     {
-        // 左端にY軸ラベル
+        // Y-axis label on the left
         double actualValue = minLow + (row / scale);
         std::ostringstream yLabelSS;
         yLabelSS << std::fixed << std::setprecision(1) << actualValue;
@@ -301,7 +301,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         }
         std::cout << yLabelStr << " | ";
 
-        // キャンドル描画
+        // Plot each candlestick
         for (int i = 0; i < displayCount; ++i)
         {
             double open  = candles[i].open;
@@ -317,7 +317,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
             int boxTop    = std::max(scaledOpen, scaledClose);
             int boxBottom = std::min(scaledOpen, scaledClose);
 
-            // ローソク足描画範囲外
+            // Outside candlestick drawing range
             if (row > scaledHigh || row < scaledLow) {
                 std::cout << std::string(COLUMN_WIDTH, ' ');
                 continue;
@@ -328,25 +328,25 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
             bool isBoxRange  = (row <= boxTop && row >= boxBottom);
 
             if (row == scaledHigh) {
-                // 上ヒゲの先端
+                // Top of upper wick
                 std::cout << "  ^  ";
             }
             else if (row == scaledLow) {
-                // 下ヒゲの先端
+                // Bottom of lower wick
                 std::cout << "  v  ";
             }
             else if (isBoxRange) {
-                // ボックス本体
-                if (close >= open) { // 陽線
-                    std::cout << "\033[32m";
-                } else {             // 陰線
-                    std::cout << "\033[31m";
+                // Body of the candlestick
+                if (close >= open) { // Bullish
+                    std::cout << "\033[32m"; // Green color
+                } else {             // Bearish
+                    std::cout << "\033[31m"; // Red color
                 }
                 std::cout << " [#] ";
-                std::cout << "\033[0m"; // 色リセット
+                std::cout << "\033[0m"; // Reset color
             }
             else if (isWickRange) {
-                // ヒゲ部分
+                // Wick part
                 std::cout << "  |  ";
             }
             else {
@@ -356,7 +356,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         std::cout << std::endl;
     }
 
-    // X軸ラベル (年)
+    // X-axis labels (years)
     std::cout << std::string(Y_LABEL_WIDTH, ' ') << "  ";
     for (int i = 0; i < displayCount; ++i) {
         std::string yearStr = "----";
@@ -369,32 +369,32 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
 }
 
 // ─────────────────────────────────────────────
-// (4) 国コード + データタイプ を指定して、年ごとに集計した気温を縦型のヒストグラムで表示
+// (4) Display Yearly Temperature Histogram Based on Country Code and Data Type
 // ─────────────────────────────────────────────
 void MerkelMain::showYearlyHistogram()
 {
-    // (1) 国コード取得
+    // (1) Get Country Code
     std::string countryCode = getCountryCodeFromUser();
     if (countryCode.empty()) {
-        return; // 入力エラー時は中断
+        return; // Exit on input error
     }
 
-    // (2) データタイプ選択
+    // (2) Select Data Type
     int dataType = getDataTypeFromUser(); 
-    // 1=平均, 2=最高, 3=最低
+    // 1=Average, 2=Max, 3=Min
 
-    // (3) CSV データの存在確認
+    // (3) Check if CSV Data Exists
     if (csvData.empty()) {
-        std::cout << "CSVデータが空です。\n";
+        std::cout << "CSV data is empty.\n";
         return;
     }
 
-    // ヘッダー行を取得
+    // Get header row
     const std::vector<std::string>& header = csvData[0];
     std::string targetColumn = countryCode + "_temperature";
     int targetIndex = -1;
 
-    // ヘッダーから対象の列を探す
+    // Find target column in header
     for (size_t i = 0; i < header.size(); ++i) {
         if (header[i] == targetColumn) {
             targetIndex = static_cast<int>(i);
@@ -403,10 +403,10 @@ void MerkelMain::showYearlyHistogram()
     }
 
     if (targetIndex == -1) {
-        std::cout << "指定された国コード「" << countryCode << "」に対応する列が見つかりません。\n";
-        std::cout << "利用可能な国コードは以下の通りです:\n";
-        for (size_t i = 1; i < header.size(); ++i) { // 0はタイムスタンプ
-            // "AT_temperature" から "AT" を抽出
+        std::cout << "The specified country code \"" << countryCode << "\" was not found in the headers.\n";
+        std::cout << "Available country codes are as follows:\n";
+        for (size_t i = 1; i < header.size(); ++i) { // Skip first column (timestamp)
+            // Extract country code from "AT_temperature"
             size_t pos = header[i].find("_temperature");
             if (pos != std::string::npos) {
                 std::string code = header[i].substr(0, pos);
@@ -416,42 +416,42 @@ void MerkelMain::showYearlyHistogram()
         return;
     }
 
-    // 年ごとの気温データを格納するマップ
+    // Map to store yearly temperature data
     std::map<int, std::vector<double>> yearToTemps;
 
-    // データ行を処理
-    for (size_t i = 1; i < csvData.size(); ++i) { // ヘッダーをスキップ
+    // Process data rows
+    for (size_t i = 1; i < csvData.size(); ++i) { // Skip header
         const std::vector<std::string>& row = csvData[i];
         if (static_cast<int>(row.size()) <= targetIndex) {
-            continue; // 指定された列が存在しない場合
+            continue; // Skip if target column does not exist
         }
 
-        // タイムスタンプから年を抽出
+        // Extract year from timestamp
         std::string timestamp = row[0];
         if (timestamp.size() < 4) {
-            continue; // 無効なタイムスタンプ
+            continue; // Invalid timestamp
         }
         int year = 0;
         try {
             year = std::stoi(timestamp.substr(0, 4));
         } catch (...) {
-            continue; // 無効な年
+            continue; // Invalid year
         }
 
-        // 気温データを取得
+        // Get temperature data
         double temperature = 0.0;
         try {
             temperature = std::stod(row[targetIndex]);
         } catch (...) {
-            continue; // 無効な気温データ
+            continue; // Invalid temperature data
         }
 
-        // 年ごとのデータを更新
+        // Update yearly data
         yearToTemps[year].push_back(temperature);
     }
 
-    // (4) 年ごとの値を「平均 or 最高 or 最低」に集約
-    //     これにより年 -> 1つの値 になる
+    // (4) Aggregate yearly data as "Average or Max or Min"
+    //     This results in year -> single value
     std::vector<std::pair<int, double>> yearlyData; // (year, temperature)
 
     for (const auto& kv : yearToTemps)
@@ -462,21 +462,21 @@ void MerkelMain::showYearlyHistogram()
 
         if (temps.empty()) continue;
 
-        // 集計
+        // Aggregate
         double finalVal = 0.0;
 
         if (dataType == 1) {
-            // 平均: sum / count
+            // Average: sum / count
             double sum = 0.0;
             for (double t : temps) sum += t;
             finalVal = sum / temps.size();
         }
         else if (dataType == 2) {
-            // 最高
+            // Max
             finalVal = *std::max_element(temps.begin(), temps.end());
         }
         else {
-            // 最低
+            // Min
             finalVal = *std::min_element(temps.begin(), temps.end());
         }
 
@@ -484,19 +484,19 @@ void MerkelMain::showYearlyHistogram()
     }
 
     if (yearlyData.empty()) {
-        std::cout << "\n指定された国コード「" << countryCode << "」に対応するデータが存在しません。\n";
+        std::cout << "\nNo data available for the specified country code \"" << countryCode << "\".\n";
         return;
     }
 
-    // 年で昇順ソート
+    // Sort years in ascending order
     std::sort(yearlyData.begin(), yearlyData.end(),
         [](const std::pair<int, double>& a, const std::pair<int, double>& b) -> bool {
             return a.first < b.first;
         }
     );
 
-    // (5) ヒストグラム用のスケーリング準備
-    //     縦軸の最大値を探し、テキストベースで縦棒を描画する
+    // (5) Prepare scaling for histogram
+    //     Find the maximum value on the Y-axis and draw vertical bars as text
     double maxVal = std::numeric_limits<double>::lowest();
     double minVal = std::numeric_limits<double>::max();
     for (const auto& p : yearlyData) {
@@ -504,51 +504,51 @@ void MerkelMain::showYearlyHistogram()
         if (val > maxVal) maxVal = val;
         if (val < minVal) minVal = val;
     }
-    // 0 から始めたい場合は minVal = 0.0 としても良い
+    // To start from 0, you can set minVal = 0.0 if desired
 
     double range = maxVal - minVal;
     if (range <= 0.0) {
-        std::cout << "\nすべてのデータポイントが同じ値です。縦型ヒストグラムを描画できません。\n";
+        std::cout << "\nAll data points have the same value. Cannot draw vertical histogram.\n";
         return;
     }
 
-    // 縦方向の高さ (適当に 20 行とする)
+    // Height in vertical direction (set to 20 lines)
     const int chartHeight = 20;
-    // スケーリング
+    // Scaling
     double scale = static_cast<double>(chartHeight) / range;
 
-    // (6) 上から下に向かって一行ずつ描画
+    // (6) Draw each row from top to bottom
     std::cout << "\n===== Yearly "
               << ((dataType == 1) ? "Average" : (dataType == 2) ? "Max" : "Min")
               << " Temp for " << countryCode << " =====\n\n";
 
-    // 縦軸ラベルの幅を確保 (例: 6文字)
+    // Ensure space for Y-axis labels (e.g., 6 characters)
     const int labelWidth = 6;
 
     // row: chartHeight ~ 0
     for (int row = chartHeight; row >= 0; --row)
     {
-        // 縦軸ラベルを計算
+        // Calculate Y-axis label
         double currentVal = minVal + (range * row / chartHeight);
-        // ラベルを固定幅で整形 (小数点以下1桁)
+        // Format label with fixed width (1 decimal place)
         std::ostringstream labelStream;
         labelStream << std::fixed << std::setprecision(1) << currentVal;
         std::string label = labelStream.str();
 
-        // ラベルを右寄せで表示
+        // Right-align the label
         std::cout << std::setw(labelWidth) << label << " | ";
 
-        // 各年分ループ
+        // Loop through each year's data
         for (size_t i = 0; i < yearlyData.size(); ++i)
         {
             double val = yearlyData[i].second;
-            // スケール上での高さ
+            // Height on scale
             int barHeight = static_cast<int>((val - minVal) * scale);
 
-            // 現在の row がバー以上なら "#"、そうでなければ " "
-            // ただしバーの下側は row == 0 が基底線なので
+            // If current row is within the bar height, draw "#", else " "
+            // Note: row == 0 is the baseline
             if (row <= barHeight - 1) {
-                // '#' 描画
+                // Draw '#'
                 std::cout << "  #  ";
             } else {
                 std::cout << "     ";
@@ -557,18 +557,18 @@ void MerkelMain::showYearlyHistogram()
         std::cout << "\n";
     }
 
-    // (7) X軸（年）ラベルを出力
-    //     1行か2行にまとめて、年の下に印字する
-    //     年が多いと崩れるので、行数が多い場合は工夫が必要です
-    //     簡易実装として、1行だけに yearInt を書く
+    // (7) Output X-axis (year) labels
+    //     Combine into one line below the histogram
+    //     If there are too many years, it may overlap, so adjust as needed
+    //     implementation: write yearInt on one line
 
-    // X軸のラベル前にスペースを追加 (ラベル幅 + ' | ')
+    // Add space before X-axis labels (label width + ' | ')
     std::cout << std::setw(labelWidth + 2) << " " << " ";
 
     for (size_t i = 0; i < yearlyData.size(); ++i)
     {
         int yearInt = yearlyData[i].first;
-        // 5文字幅くらい確保
+        // Allocate approximately 5 characters for each year
         std::ostringstream oss;
         oss << std::setw(5) << yearInt;
         std::cout << oss.str();
@@ -577,16 +577,16 @@ void MerkelMain::showYearlyHistogram()
 }
 
 // ─────────────────────────────────────────────
-// (5) 将来の気温予測 (単回帰分析)
+// (5) Predict Future Temperature (Linear Regression)
 // ─────────────────────────────────────────────
 void MerkelMain::predictFutureTemperature()
 {
     std::string countryCode = getCountryCodeFromUser();
     if (countryCode.empty()) {
-        return; // 入力エラー
+        return; // Input error
     }
 
-    // CSVデータから対象の気温データを取得
+    // Get temperature data for the specified country from CSV
     std::vector<Candlestick> candles = computeCandlestickDataForCountry(countryCode);
     if (candles.empty()) {
         std::cerr << "No candlestick data computed. "
@@ -594,16 +594,16 @@ void MerkelMain::predictFutureTemperature()
         return;
     }
 
-    // 年と平均気温のデータポイントを抽出
-    std::vector<std::pair<int, double>> dataPoints; // (年, 平均気温)
+    // Extract data points as (year, average temperature)
+    std::vector<std::pair<int, double>> dataPoints; // (year, average temperature)
     for (const auto& candle : candles) {
         int year = 0;
         try {
             year = std::stoi(candle.date.substr(0, 4));
         } catch (...) {
-            continue; // 無効な年の場合はスキップ
+            continue; // Skip invalid year
         }
-        dataPoints.emplace_back(year, candle.close); // ここでは 'close' を平均気温として仮定
+        dataPoints.emplace_back(year, candle.close); // Assuming 'close' represents average temperature
     }
 
     if (dataPoints.size() < 2) {
@@ -611,7 +611,7 @@ void MerkelMain::predictFutureTemperature()
         return;
     }
 
-    // 単回帰分析の計算
+    // Calculate sums for regression
     double sumX = 0.0, sumY = 0.0, sumXY = 0.0, sumX2 = 0.0;
     int n = dataPoints.size();
     for (const auto& point : dataPoints) {
@@ -621,22 +621,22 @@ void MerkelMain::predictFutureTemperature()
         sumX2 += point.first * point.first;
     }
 
-    // 単回帰分析の式: Y = slope * X + intercept
+    // linear regression formula: Y = slope * X + intercept
     double denominator = n * sumX2 - sumX * sumX;
     if (denominator == 0.0) {
         std::cerr << "Denominator is zero. Cannot perform regression.\n";
         return;
     }
 
-    // 単回帰分析の係数を計算
+    // Calculate regression coefficients
     double slope = (n * sumXY - sumX * sumY) / denominator;
-    // Y切片
+    // Y-intercept
     double intercept = (sumY * sumX2 - sumX * sumXY) / denominator;
 
-    std::cout << "\n=== Simple Linear Regression ===\n";
+    std::cout << "\n=== Linear Regression ===\n";
     std::cout << "Equation: Y = " << slope << " * X + " << intercept << "\n";
 
-    // 将来の予測年数をユーザーに入力してもらう
+    // Get the number of future years to predict from the user
     int futureYears = 0;
     std::cout << "Enter the number of future years to predict: ";
     std::string line;
@@ -654,7 +654,7 @@ void MerkelMain::predictFutureTemperature()
         return;
     }
 
-    // 最後のデータポイントの年を基準に予測
+    // Use the last data point's year as the base for prediction
     int lastYear = dataPoints.back().first;
     std::cout << "\n=== Predicted Temperatures ===\n";
     std::cout << "Year\tPredicted Temperature\n";

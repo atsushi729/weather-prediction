@@ -6,69 +6,71 @@
 #include "Candlestick.h"
 
 /**
- * @brief メインクラス
- *        - CSVデータ読み込み
- *        - ローソク足計算
- *        - テキストベース描画
- *        - メニュー制御
+ * @brief Main class
+ *        - CSV data loading
+ *        - Candlestick calculation
+ *        - Text-based rendering
+ *        - Menu control
  */
 class MerkelMain
 {
 public:
-    // コンストラクタ
+    // Constructor
     MerkelMain();
 
-    // メインループ開始
+    // Start main loop
     void init();
-
-    // 将来の気温予測
-    void predictFutureTemperature();
 private:
-    // メニュー表示
+    // Display menu
     void printMenu();
-    // ヘルプ表示
+    // Display help
     void printHelp();
-    // ユーザーの選択肢取得
+    // Get user option
     int getUserOption();
-    // ユーザーの選択肢に応じた処理
+    // Process based on user option
     void processUserOption(int userOption);
 
-    // ユーザーから国コードを取得
+    // Get country code from user
     std::string getCountryCodeFromUser();
 
-    // CSVデータから Candlestick を計算
+    // Compute Candlestick from CSV data
     std::vector<Candlestick> computeCandlestickDataForCountry(const std::string& countryCode);
 
-    // --------------------------
-    // (1) ローソク足の計算・一覧表示 (メニュー2)
-    // --------------------------
+    // ─────────────────────────────────────────────
+    // (1) Compute and Display Candlestick Data (Menu 2)
+    // ─────────────────────────────────────────────
     void computeAndDisplayCandlestickData();
 
-    // --------------------------
-    // (2) ローソク足の計算（裏で実施）＋即時テキストプロット (メニュー3)
-    // --------------------------
+    // ─────────────────────────────────────────────
+    // (2) Compute Candlestick Data (Behind the Scenes) + Immediate Text Plotting (Menu 3)
+    // ─────────────────────────────────────────────
     void computeCandlestickAndPlot();
 
-    // --------------------------
-    // (3) 計算済みローソク足のテキストベース描画
-    // --------------------------
+    // ─────────────────────────────────────────────
+    // (3) Text-based Rendering of Computed Candlestick Data
+    // ─────────────────────────────────────────────
     void plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount);
 
-    // --------------------------
-    // (4) 計算済みヒストグラムのテキストベース描画
-    // --------------------------
+    // ─────────────────────────────────────────────
+    // (4) Text-based Rendering of Computed Histogram
+    // ─────────────────────────────────────────────
     void showYearlyHistogram();
 
-    // 既存の関数: 1=平均、2=最大気温、3=最小気温 を選ぶ
+    // Existing function: Select 1=Average, 2=Max Temperature, 3=Min Temperature
     int getDataTypeFromUser();
 
-    // --------------------------
-    // メンバ変数
-    // --------------------------
-    // 直近で計算したローソク足データ
+    // ─────────────────────────────────────────────
+    // (5) Predict future temperature
+    // ─────────────────────────────────────────────
+    void predictFutureTemperature();
+
+    // ─────────────────────────────────────────────
+    // Member Variables
+    // ─────────────────────────────────────────────
+    // Recently computed candlestick data
     std::vector<Candlestick> lastComputedCandles;
 
-    // CSVの生データ
+    // Raw CSV data
     std::vector<std::vector<std::string>> csvData;
 };
 

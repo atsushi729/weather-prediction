@@ -7,7 +7,7 @@
 
 class CandlestickCalculator {
 public:
-    // CSVデータと国コードを受け取り、ローソク足データのベクターを返す
+    // get CSV data and country code, return candlestick data
     static std::vector<Candlestick> computeCandlestickData(const std::vector<std::vector<std::string>>& csvData, const std::string& countryCode);
 };
 

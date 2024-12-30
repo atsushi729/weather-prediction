@@ -5,11 +5,12 @@
 #include <algorithm>
 #include <iostream>
 
+// Structure to hold temperature data for each year
 struct TemperatureData {
-    double sum;    // 年間の気温の合計
-    int count;     // 気温データの数
-    double high;   // 年間の最高気温
-    double low;    // 年間の最低気温
+    double sum;    // Annual temperature sum
+    int count;     // Number of temperature data points
+    double high;   // Annual maximum temperature
+    double low;    // Annual minimum temperature
 
     TemperatureData()
         : sum(0.0), count(0),
@@ -17,6 +18,7 @@ struct TemperatureData {
           low(std::numeric_limits<double>::max()) {}
 };
 
+// Function to compute candlestick data from CSV data for a given country
 std::vector<Candlestick> CandlestickCalculator::computeCandlestickData(const std::vector<std::vector<std::string>>& csvData, const std::string& countryCode) {
     std::vector<Candlestick> candlesticks;
 
@@ -25,7 +27,7 @@ std::vector<Candlestick> CandlestickCalculator::computeCandlestickData(const std
         return candlesticks;
     }
 
-    // ヘッダーから国コードの列インデックスを特定
+    // Identify the column index for the country code from the header
     const std::vector<std::string>& header = csvData[0];
     std::string targetColumn = countryCode + "_temperature";
     int targetIndex = -1;
@@ -41,37 +43,37 @@ std::vector<Candlestick> CandlestickCalculator::computeCandlestickData(const std
         return candlesticks;
     }
 
-    // 年ごとの気温データを格納するマップ
+    // Map to store yearly temperature data
     std::unordered_map<int, TemperatureData> yearlyData;
 
-    // データ行を処理
-    for (size_t i = 1; i < csvData.size(); ++i) { // ヘッダーをスキップ
+    // Process each data row
+    for (size_t i = 1; i < csvData.size(); ++i) { // Skip header
         const std::vector<std::string>& row = csvData[i];
         if (static_cast<int>(row.size()) <= targetIndex) {
-            continue; // 指定された列が存在しない場合
+            continue; // If the specified column does not exist
         }
 
-        // タイムスタンプから年を抽出
+        // Extract the year from the timestamp
         std::string timestamp = row[0];
         if (timestamp.size() < 4) {
-            continue; // 無効なタイムスタンプ
+            continue; // Invalid timestamp
         }
         int year = 0;
         try {
             year = std::stoi(timestamp.substr(0, 4));
         } catch (...) {
-            continue; // 無効な年
+            continue; // Invalid year
         }
 
-        // 気温データを取得
+        // Retrieve temperature data
         double temperature = 0.0;
         try {
             temperature = std::stod(row[targetIndex]);
         } catch (...) {
-            continue; // 無効な気温データ
+            continue; // Invalid temperature data
         }
 
-        // 年ごとのデータを更新
+        // Update yearly data
         TemperatureData& data = yearlyData[year];
         data.sum += temperature;
         data.count += 1;
@@ -83,7 +85,7 @@ std::vector<Candlestick> CandlestickCalculator::computeCandlestickData(const std
         }
     }
 
-    // 年をソートするために年のリストを作成
+    // Create a list of years to sort
     std::vector<int> years;
     for (const auto& pair : yearlyData) {
         years.push_back(pair.first);
@@ -97,16 +99,16 @@ std::vector<Candlestick> CandlestickCalculator::computeCandlestickData(const std
         int year = years[i];
         TemperatureData& data = yearlyData[year];
         if (data.count == 0) {
-            continue; // データがない年はスキップ
+            continue; // Skip years with no data
         }
 
         double average = data.sum / data.count;
-        double open = hasPrevious ? previousAverage : average; // 最初の年は自身の平均を使用
+        double open = hasPrevious ? previousAverage : average; // For the first year, use its own average
         double close = average;
         double high = data.high;
         double low = data.low;
 
-        // 年を "YYYY" 形式で設定
+        // Set the year in "YYYY" format
         std::string yearStr = std::to_string(year);
 
         Candlestick candle(yearStr, open, high, low, close);
