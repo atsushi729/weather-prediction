@@ -7,6 +7,7 @@
 #include <cmath>       // std::floor
 #include <algorithm>   // std::min / std::max
 #include <sstream>     // std::ostringstream
+#include <map>
 
 #include "CSVReader.h"
 #include "CandlestickCalculator.h"
@@ -77,6 +78,7 @@ void MerkelMain::printMenu()
     std::cout << "1: Print help\n";
     std::cout << "2: Compute Candlestick Data\n";
     std::cout << "3: Plot Candlestick Data (Compute behind the scenes)\n";
+    std::cout << "4: Show Yearly Temperature Histogram\n"; // メニュー文言を変更
     std::cout << "0: Exit\n";
     std::cout << "==============\n";
 }
@@ -136,6 +138,10 @@ void MerkelMain::processUserOption(int userOption)
             // (2) ローソク足の計算 ＋ 即時テキスト描画
             computeCandlestickAndPlot();
             break;
+        case 4:
+            // 縦型のヒストグラム表示
+            showYearlyHistogram();
+            break;
         default:
             std::cout << "Invalid choice. Choose a valid option." << std::endl;
             break;
@@ -156,6 +162,26 @@ std::string MerkelMain::getCountryCodeFromUser()
     return countryCode;
 }
 
+
+int MerkelMain::getDataTypeFromUser()
+{
+    // ここに処理を書く
+    // 例:
+    std::cout << "1: Average Temperature\n"
+              << "2: Max Temperature\n"
+              << "3: Min Temperature\n"
+              << ">> ";
+    std::string line;
+    std::getline(std::cin, line);
+    int dataType = 0;
+    try {
+        dataType = std::stoi(line);
+    } catch(...) {
+        dataType = 1; // デフォルト
+    }
+    if (dataType < 1 || dataType > 3) dataType = 1;
+    return dataType;
+}
 // ─────────────────────────────────────────────
 // CSVデータから Candlestick を計算
 // ─────────────────────────────────────────────
@@ -334,6 +360,204 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
             yearStr = candles[i].date.substr(0, 4);
         }
         std::cout << fixedWidth(yearStr, COLUMN_WIDTH);
+    }
+    std::cout << std::endl;
+}
+
+/**
+ * @brief (メニュー4) 国コード + データタイプ を指定して、
+ *        年ごとに集計した気温を縦型のヒストグラムで表示
+ */
+void MerkelMain::showYearlyHistogram()
+{
+    // (1) 国コード取得
+    std::string countryCode = getCountryCodeFromUser();
+    if (countryCode.empty()) {
+        return; // 入力エラー時は中断
+    }
+
+    // (2) データタイプ選択
+    int dataType = getDataTypeFromUser(); 
+    // 1=平均, 2=最高, 3=最低
+
+    // (3) CSV データの存在確認
+    if (csvData.empty()) {
+        std::cout << "CSVデータが空です。\n";
+        return;
+    }
+
+    // ヘッダー行を取得
+    const std::vector<std::string>& header = csvData[0];
+    std::string targetColumn = countryCode + "_temperature";
+    int targetIndex = -1;
+
+    // ヘッダーから対象の列を探す
+    for (size_t i = 0; i < header.size(); ++i) {
+        if (header[i] == targetColumn) {
+            targetIndex = static_cast<int>(i);
+            break;
+        }
+    }
+
+    if (targetIndex == -1) {
+        std::cout << "指定された国コード「" << countryCode << "」に対応する列が見つかりません。\n";
+        std::cout << "利用可能な国コードは以下の通りです:\n";
+        for (size_t i = 1; i < header.size(); ++i) { // 0はタイムスタンプ
+            // "AT_temperature" から "AT" を抽出
+            size_t pos = header[i].find("_temperature");
+            if (pos != std::string::npos) {
+                std::string code = header[i].substr(0, pos);
+                std::cout << "- " << code << "\n";
+            }
+        }
+        return;
+    }
+
+    // 年ごとの気温データを格納するマップ
+    std::map<int, std::vector<double>> yearToTemps;
+
+    // データ行を処理
+    for (size_t i = 1; i < csvData.size(); ++i) { // ヘッダーをスキップ
+        const std::vector<std::string>& row = csvData[i];
+        if (static_cast<int>(row.size()) <= targetIndex) {
+            continue; // 指定された列が存在しない場合
+        }
+
+        // タイムスタンプから年を抽出
+        std::string timestamp = row[0];
+        if (timestamp.size() < 4) {
+            continue; // 無効なタイムスタンプ
+        }
+        int year = 0;
+        try {
+            year = std::stoi(timestamp.substr(0, 4));
+        } catch (...) {
+            continue; // 無効な年
+        }
+
+        // 気温データを取得
+        double temperature = 0.0;
+        try {
+            temperature = std::stod(row[targetIndex]);
+        } catch (...) {
+            continue; // 無効な気温データ
+        }
+
+        // 年ごとのデータを更新
+        yearToTemps[year].push_back(temperature);
+    }
+
+    // (4) 年ごとの値を「平均 or 最高 or 最低」に集約
+    //     これにより年 -> 1つの値 になる
+    std::vector<std::pair<int, double>> yearlyData; // (year, temperature)
+
+    for (const auto& kv : yearToTemps)
+    {
+        // kv.first = year, kv.second = vector<double>
+        int year = kv.first;
+        const std::vector<double>& temps = kv.second;
+
+        if (temps.empty()) continue;
+
+        // 集計
+        double finalVal = 0.0;
+
+        if (dataType == 1) {
+            // 平均: sum / count
+            double sum = 0.0;
+            for (double t : temps) sum += t;
+            finalVal = sum / temps.size();
+            std::cout << "Year: " << year << " | Avg: " << finalVal << std::endl;
+        }
+        else if (dataType == 2) {
+            // 最高
+            finalVal = *std::max_element(temps.begin(), temps.end());
+            std::cout << "Year: " << year << " | Max: " << finalVal << std::endl;
+        }
+        else {
+            // 最低
+            finalVal = *std::min_element(temps.begin(), temps.end());
+            std::cout << "Year: " << year << " | Min: " << finalVal << std::endl;
+        }
+
+        yearlyData.emplace_back(year, finalVal);
+    }
+
+    std::cout << "Yearly data size: " << yearlyData.size() << std::endl;
+
+    if (yearlyData.empty()) {
+        std::cout << "\n指定された国コード「" << countryCode << "」に対応するデータが存在しません。\n";
+        return;
+    }
+
+    // 年で昇順ソート
+    std::sort(yearlyData.begin(), yearlyData.end(),
+        [](const std::pair<int, double>& a, const std::pair<int, double>& b) -> bool {
+            return a.first < b.first;
+        }
+    );
+
+    // (5) ヒストグラム用のスケーリング準備
+    //     縦軸の最大値を探し、テキストベースで縦棒を描画する
+    double maxVal = std::numeric_limits<double>::lowest();
+    double minVal = std::numeric_limits<double>::max();
+    for (const auto& p : yearlyData) {
+        double val = p.second;
+        if (val > maxVal) maxVal = val;
+        if (val < minVal) minVal = val;
+    }
+    // 0 から始めたい場合は minVal = 0.0 としても良い
+
+    double range = maxVal - minVal;
+    if (range <= 0.0) {
+        std::cout << "\nすべてのデータポイントが同じ値です。縦型ヒストグラムを描画できません。\n";
+        return;
+    }
+
+    // 縦方向の高さ (適当に 20 行とする)
+    const int chartHeight = 20;
+    // スケーリング
+    double scale = static_cast<double>(chartHeight) / range;
+
+    // (6) 上から下に向かって一行ずつ描画
+    std::cout << "\n===== Yearly "
+              << ((dataType == 1) ? "Average" : (dataType == 2) ? "Max" : "Min")
+              << " Temp for " << countryCode << " =====\n\n";
+
+    // row: chartHeight ~ 0
+    for (int row = chartHeight; row >= 0; --row)
+    {
+        // 各年分ループ
+        for (size_t i = 0; i < yearlyData.size(); ++i)
+        {
+            double val = yearlyData[i].second;
+            // スケール上での高さ
+            int barHeight = static_cast<int>((val - minVal) * scale);
+
+            // 現在の row がバー以上なら "#"、そうでなければ " "
+            // ただしバーの下側は row == 0 が基底線なので
+            if (row <= barHeight - 1) {
+                // '#' 描画
+                std::cout << "  #  ";
+            } else {
+                std::cout << "     ";
+            }
+        }
+        std::cout << "\n";
+    }
+
+    // (7) X軸（年）ラベルを出力
+    //     1行か2行にまとめて、年の下に印字する
+    //     年が多いと崩れるので、行数が多い場合は工夫が必要です
+    //     簡易実装として、1行だけに yearInt を書く
+    std::cout << std::endl;
+    for (size_t i = 0; i < yearlyData.size(); ++i)
+    {
+        int yearInt = yearlyData[i].first;
+        // 5文字幅くらい確保
+        std::ostringstream oss;
+        oss << std::setw(5) << yearInt;
+        std::cout << oss.str();
     }
     std::cout << std::endl;
 }

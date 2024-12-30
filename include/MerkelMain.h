@@ -53,6 +53,14 @@ private:
     void plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount);
 
     // --------------------------
+    // (4) 計算済みヒストグラムのテキストベース描画
+    // --------------------------
+    void showYearlyHistogram();
+
+    // 既存の関数: 1=平均、2=最大気温、3=最小気温 を選ぶ
+    int getDataTypeFromUser();
+
+    // --------------------------
     // メンバ変数
     // --------------------------
     // 直近で計算したローソク足データ
