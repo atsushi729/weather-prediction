@@ -467,23 +467,18 @@ void MerkelMain::showYearlyHistogram()
             double sum = 0.0;
             for (double t : temps) sum += t;
             finalVal = sum / temps.size();
-            std::cout << "Year: " << year << " | Avg: " << finalVal << std::endl;
         }
         else if (dataType == 2) {
             // 最高
             finalVal = *std::max_element(temps.begin(), temps.end());
-            std::cout << "Year: " << year << " | Max: " << finalVal << std::endl;
         }
         else {
             // 最低
             finalVal = *std::min_element(temps.begin(), temps.end());
-            std::cout << "Year: " << year << " | Min: " << finalVal << std::endl;
         }
 
         yearlyData.emplace_back(year, finalVal);
     }
-
-    std::cout << "Yearly data size: " << yearlyData.size() << std::endl;
 
     if (yearlyData.empty()) {
         std::cout << "\n指定された国コード「" << countryCode << "」に対応するデータが存在しません。\n";
@@ -524,9 +519,22 @@ void MerkelMain::showYearlyHistogram()
               << ((dataType == 1) ? "Average" : (dataType == 2) ? "Max" : "Min")
               << " Temp for " << countryCode << " =====\n\n";
 
+    // 縦軸ラベルの幅を確保 (例: 6文字)
+    const int labelWidth = 6;
+
     // row: chartHeight ~ 0
     for (int row = chartHeight; row >= 0; --row)
     {
+        // 縦軸ラベルを計算
+        double currentVal = minVal + (range * row / chartHeight);
+        // ラベルを固定幅で整形 (小数点以下1桁)
+        std::ostringstream labelStream;
+        labelStream << std::fixed << std::setprecision(1) << currentVal;
+        std::string label = labelStream.str();
+
+        // ラベルを右寄せで表示
+        std::cout << std::setw(labelWidth) << label << " | ";
+
         // 各年分ループ
         for (size_t i = 0; i < yearlyData.size(); ++i)
         {
@@ -550,7 +558,10 @@ void MerkelMain::showYearlyHistogram()
     //     1行か2行にまとめて、年の下に印字する
     //     年が多いと崩れるので、行数が多い場合は工夫が必要です
     //     簡易実装として、1行だけに yearInt を書く
-    std::cout << std::endl;
+
+    // X軸のラベル前にスペースを追加 (ラベル幅 + ' | ')
+    std::cout << std::setw(labelWidth + 2) << " " << " ";
+
     for (size_t i = 0; i < yearlyData.size(); ++i)
     {
         int yearInt = yearlyData[i].first;
@@ -559,5 +570,5 @@ void MerkelMain::showYearlyHistogram()
         oss << std::setw(5) << yearInt;
         std::cout << oss.str();
     }
-    std::cout << std::endl;
+    std::cout << "\n";
 }
