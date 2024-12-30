@@ -78,11 +78,11 @@ void MerkelMain::printMenu()
     std::cout << "1: Print help\n";
     std::cout << "2: Compute Candlestick Data\n";
     std::cout << "3: Plot Candlestick Data (Compute behind the scenes)\n";
-    std::cout << "4: Show Yearly Temperature Histogram\n"; // メニュー文言を変更
+    std::cout << "4: Show Yearly Temperature Histogram\n";
+    std::cout << "5: Predict Future Temperature (Linear Regression)\n";
     std::cout << "0: Exit\n";
     std::cout << "==============\n";
 }
-
 // ─────────────────────────────────────────────
 // ヘルプ表示
 // ─────────────────────────────────────────────
@@ -128,19 +128,24 @@ void MerkelMain::processUserOption(int userOption)
             // Exit
             break;
         case 1:
+            // (1) ヘルプ表示
             printHelp();
             break;
         case 2:
-            // (1) ローソク足の計算 + 一覧表示
+            // (2) ローソク足の計算 + 一覧表示
             computeAndDisplayCandlestickData();
             break;
         case 3:
-            // (2) ローソク足の計算 ＋ 即時テキスト描画
+            // (3) ローソク足の計算 ＋ 即時テキスト描画
             computeCandlestickAndPlot();
             break;
         case 4:
-            // 縦型のヒストグラム表示
+            // (4) 縦型のヒストグラム表示
             showYearlyHistogram();
+            break;
+        case 5:
+            // (5) 将来の気温予測 (単回帰分析)
+            predictFutureTemperature();
             break;
         default:
             std::cout << "Invalid choice. Choose a valid option." << std::endl;
@@ -165,8 +170,7 @@ std::string MerkelMain::getCountryCodeFromUser()
 
 int MerkelMain::getDataTypeFromUser()
 {
-    // ここに処理を書く
-    // 例:
+    // データタイプ選択
     std::cout << "1: Average Temperature\n"
               << "2: Max Temperature\n"
               << "3: Min Temperature\n"
@@ -364,10 +368,9 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
     std::cout << std::endl;
 }
 
-/**
- * @brief (メニュー4) 国コード + データタイプ を指定して、
- *        年ごとに集計した気温を縦型のヒストグラムで表示
- */
+// ─────────────────────────────────────────────
+// (4) 国コード + データタイプ を指定して、年ごとに集計した気温を縦型のヒストグラムで表示
+// ─────────────────────────────────────────────
 void MerkelMain::showYearlyHistogram()
 {
     // (1) 国コード取得
@@ -571,4 +574,93 @@ void MerkelMain::showYearlyHistogram()
         std::cout << oss.str();
     }
     std::cout << "\n";
+}
+
+// ─────────────────────────────────────────────
+// (5) 将来の気温予測 (単回帰分析)
+// ─────────────────────────────────────────────
+void MerkelMain::predictFutureTemperature()
+{
+    std::string countryCode = getCountryCodeFromUser();
+    if (countryCode.empty()) {
+        return; // 入力エラー
+    }
+
+    // CSVデータから対象の気温データを取得
+    std::vector<Candlestick> candles = computeCandlestickDataForCountry(countryCode);
+    if (candles.empty()) {
+        std::cerr << "No candlestick data computed. "
+                  << "Check if the country code is correct and data is available.\n";
+        return;
+    }
+
+    // 年と平均気温のデータポイントを抽出
+    std::vector<std::pair<int, double>> dataPoints; // (年, 平均気温)
+    for (const auto& candle : candles) {
+        int year = 0;
+        try {
+            year = std::stoi(candle.date.substr(0, 4));
+        } catch (...) {
+            continue; // 無効な年の場合はスキップ
+        }
+        dataPoints.emplace_back(year, candle.close); // ここでは 'close' を平均気温として仮定
+    }
+
+    if (dataPoints.size() < 2) {
+        std::cerr << "Not enough data points for regression analysis.\n";
+        return;
+    }
+
+    // 単回帰分析の計算
+    double sumX = 0.0, sumY = 0.0, sumXY = 0.0, sumX2 = 0.0;
+    int n = dataPoints.size();
+    for (const auto& point : dataPoints) {
+        sumX += point.first;
+        sumY += point.second;
+        sumXY += point.first * point.second;
+        sumX2 += point.first * point.first;
+    }
+
+    // 単回帰分析の式: Y = slope * X + intercept
+    double denominator = n * sumX2 - sumX * sumX;
+    if (denominator == 0.0) {
+        std::cerr << "Denominator is zero. Cannot perform regression.\n";
+        return;
+    }
+
+    // 単回帰分析の係数を計算
+    double slope = (n * sumXY - sumX * sumY) / denominator;
+    // Y切片
+    double intercept = (sumY * sumX2 - sumX * sumXY) / denominator;
+
+    std::cout << "\n=== Simple Linear Regression ===\n";
+    std::cout << "Equation: Y = " << slope << " * X + " << intercept << "\n";
+
+    // 将来の予測年数をユーザーに入力してもらう
+    int futureYears = 0;
+    std::cout << "Enter the number of future years to predict: ";
+    std::string line;
+    std::getline(std::cin, line);
+    try {
+        futureYears = std::stoi(line);
+    }
+    catch (const std::exception&) {
+        std::cerr << "Invalid input for future years.\n";
+        return;
+    }
+
+    if (futureYears <= 0) {
+        std::cerr << "Number of future years must be positive.\n";
+        return;
+    }
+
+    // 最後のデータポイントの年を基準に予測
+    int lastYear = dataPoints.back().first;
+    std::cout << "\n=== Predicted Temperatures ===\n";
+    std::cout << "Year\tPredicted Temperature\n";
+    for (int i = 1; i <= futureYears; ++i) {
+        int predictYear = lastYear + i;
+        double predictedTemp = slope * predictYear + intercept;
+        std::cout << predictYear << "\t" << std::fixed << std::setprecision(3) << predictedTemp << "\n";
+    }
 }

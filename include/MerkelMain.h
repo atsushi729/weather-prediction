@@ -21,6 +21,8 @@ public:
     // メインループ開始
     void init();
 
+    // 将来の気温予測
+    void predictFutureTemperature();
 private:
     // メニュー表示
     void printMenu();
