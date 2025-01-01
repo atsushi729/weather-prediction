@@ -88,9 +88,42 @@ void MerkelMain::printMenu()
 // ─────────────────────────────────────────────
 void MerkelMain::printHelp()
 {
-    std::cout << "Help - Your aim is to compute candlestick data from a fixed weather CSV file.\n";
-    std::cout << "Select option 2 to compute candlestick data.\n";
-    std::cout << "Select option 3 to compute + immediately plot candlestick data.\n";
+    std::cout << "========================================\n";
+    std::cout << "              Help Menu                  \n";
+    std::cout << "========================================\n";
+    std::cout << "This application allows you to analyze and visualize weather data using various tools.\n\n";
+    
+    std::cout << "Available Options:\n";
+    std::cout << "1: Print Help - Display this help message.\n";
+    std::cout << "2: Compute Candlestick Data - Process the weather CSV file to compute candlestick data for a specified country.\n";
+    std::cout << "   - Candlestick data includes Open, High, Low, and Close temperatures for each year.\n\n";
+    
+    std::cout << "3: Plot Candlestick Data - Compute and immediately plot the candlestick data as a text-based chart.\n";
+    std::cout << "   - This provides a visual representation of temperature trends over the years.\n\n";
+    
+    std::cout << "4: Show Yearly Temperature Histogram - Display a vertical histogram of yearly temperatures.\n";
+    std::cout << "   - You can choose to view Average, Maximum, or Minimum temperatures.\n";
+    std::cout << "   - This helps in understanding the distribution and range of temperatures over the years.\n\n";
+    
+    std::cout << "5: Predict Future Temperature (Linear Regression) - Perform linear regression analysis to predict future temperatures.\n";
+    std::cout << "   - Based on historical data, the application will forecast temperatures for the specified number of future years.\n";
+    std::cout << "   - The prediction is visualized on a text-based plot, differentiating past data from predicted values.\n\n";
+    
+    std::cout << "0: Exit - Close the application.\n\n";
+    
+    std::cout << "Instructions:\n";
+    std::cout << "- To select an option, enter the corresponding number when prompted.\n";
+    std::cout << "- Ensure that the weather CSV file is correctly formatted and located in the expected directory.\n";
+    std::cout << "- For options requiring a country code, enter the appropriate ISO country code (e.g., GB for Great Britain).\n";
+    std::cout << "- Follow on-screen prompts for additional inputs required by each option.\n\n";
+    
+    std::cout << "Example Usage:\n";
+    std::cout << "1. To compute candlestick data, select option 2 and enter the desired country code when prompted.\n";
+    std::cout << "2. To visualize the data, select option 3 to see the candlestick chart.\n";
+    std::cout << "3. For a statistical overview, select option 4 to view the temperature histogram.\n";
+    std::cout << "4. To forecast future temperatures, select option 5 and specify the number of years you wish to predict.\n";
+    
+    std::cout << "========================================\n";
 }
 
 // ─────────────────────────────────────────────
