@@ -200,6 +200,9 @@ std::string MerkelMain::getCountryCodeFromUser()
     return countryCode;
 }
 
+// ─────────────────────────────────────────────
+// Get Data Type (Average, Max, Min) from User
+// ─────────────────────────────────────────────
 int MerkelMain::getDataTypeFromUser()
 {
     // Select Data Type
@@ -330,7 +333,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         yLabelSS << std::fixed << std::setprecision(1) << actualValue;
         std::string yLabelStr = yLabelSS.str();
 
-        // ラベルを右揃え
+        // Align the label to the right
         std::cout << std::setw(6) << yLabelStr << " | ";
 
         // Plot each candlestick
