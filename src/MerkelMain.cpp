@@ -84,7 +84,7 @@ void MerkelMain::printMenu()
 }
 
 // ─────────────────────────────────────────────
-// Display Help
+// (Menu 1) Display Help
 // ─────────────────────────────────────────────
 void MerkelMain::printHelp()
 {
@@ -199,7 +199,7 @@ std::vector<Candlestick> MerkelMain::computeCandlestickDataForCountry(const std:
 }
 
 // ─────────────────────────────────────────────
-// (1) Compute and Display Candlestick Data
+// (Menu 2) Compute and Display Candlestick Data
 // ─────────────────────────────────────────────
 void MerkelMain::computeAndDisplayCandlestickData()
 {
@@ -239,7 +239,7 @@ void MerkelMain::computeAndDisplayCandlestickData()
 }
 
 // ─────────────────────────────────────────────
-// (2) Compute Candlestick Data + Immediate Text Plotting
+// (Menu 2) Compute Candlestick Data + Immediate Text Plotting
 // ─────────────────────────────────────────────
 void MerkelMain::computeCandlestickAndPlot()
 {
@@ -262,7 +262,7 @@ void MerkelMain::computeCandlestickAndPlot()
 }
 
 // ─────────────────────────────────────────────
-// (3) Plot Candlestick Data as Text
+// (Menu 3) Plot Candlestick Data as Text
 // ─────────────────────────────────────────────
 void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, int maxDisplayCount)
 {
@@ -368,7 +368,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
 }
 
 // ─────────────────────────────────────────────
-// (4) Display Yearly Temperature Histogram Based on Country Code and Data Type
+// (Menu 4) Display Yearly Temperature Histogram Based on Country Code and Data Type
 // ─────────────────────────────────────────────
 void MerkelMain::showYearlyHistogram()
 {
@@ -576,7 +576,7 @@ void MerkelMain::showYearlyHistogram()
 }
 
 // ─────────────────────────────────────────────
-// (5) Predict Future Temperature (Linear Regression)
+// (Menu 5) Predict Future Temperature (Linear Regression)
 // ─────────────────────────────────────────────
 void MerkelMain::predictFutureTemperature()
 {
