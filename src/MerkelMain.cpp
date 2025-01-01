@@ -296,10 +296,9 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         std::ostringstream yLabelSS;
         yLabelSS << std::fixed << std::setprecision(1) << actualValue;
         std::string yLabelStr = yLabelSS.str();
-        if (static_cast<int>(yLabelStr.size()) < Y_LABEL_WIDTH) {
-            yLabelStr = std::string(Y_LABEL_WIDTH - yLabelStr.size(), ' ') + yLabelStr;
-        }
-        std::cout << yLabelStr << " | ";
+
+        // ラベルを右揃え
+        std::cout << std::setw(6) << yLabelStr << " | ";
 
         // Plot each candlestick
         for (int i = 0; i < displayCount; ++i)
@@ -357,7 +356,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
     }
 
     // X-axis labels (years)
-    std::cout << std::string(Y_LABEL_WIDTH, ' ') << "  ";
+    std::cout << std::string(6, ' ') << "  ";
     for (int i = 0; i < displayCount; ++i) {
         std::string yearStr = "----";
         if (candles[i].date.size() >= 4) {
@@ -658,9 +657,89 @@ void MerkelMain::predictFutureTemperature()
     int lastYear = dataPoints.back().first;
     std::cout << "\n=== Predicted Temperatures ===\n";
     std::cout << "Year\tPredicted Temperature\n";
+    std::vector<std::pair<int, double>> predictedData; // (year, predicted temperature)
     for (int i = 1; i <= futureYears; ++i) {
         int predictYear = lastYear + i;
         double predictedTemp = slope * predictYear + intercept;
+        predictedData.emplace_back(predictYear, predictedTemp);
         std::cout << predictYear << "\t" << std::fixed << std::setprecision(3) << predictedTemp << "\n";
     }
+
+    // (9) Plot the prediction
+    plotPrediction(dataPoints, predictedData);
+}
+
+// ─────────────────────────────────────────────
+// (Menu 5) Plot Prediction Data as Text
+// ─────────────────────────────────────────────
+void MerkelMain::plotPrediction(const std::vector<std::pair<int, double>>& pastData, const std::vector<std::pair<int, double>>& predictedData) const
+{
+    std::vector<std::pair<int, double>> allData = pastData;
+    allData.insert(allData.end(), predictedData.begin(), predictedData.end());
+
+    double minVal = std::numeric_limits<double>::max();
+    double maxVal = std::numeric_limits<double>::lowest();
+    for (const auto& p : allData) {
+        if (p.second < minVal) minVal = p.second;
+        if (p.second > maxVal) maxVal = p.second;
+    }
+
+    double range = maxVal - minVal;
+    if (range <= 0.0) {
+        std::cout << "There is no valid range to plot.\n";
+        return;
+    }
+
+    const int chartHeight = 20;
+    double scale = static_cast<double>(chartHeight - 1) / range;
+
+    int dataCount = allData.size();
+
+    std::vector<int> scaledValues;
+    for (const auto& p : allData) {
+        int scaled = static_cast<int>(std::round((p.second - minVal) * scale));
+        // Limit scale values to [0, chartHeight - 1]
+        if (scaled < 0) scaled = 0;
+        if (scaled >= chartHeight) scaled = chartHeight - 1;
+        scaledValues.push_back(scaled);
+    }
+
+    std::cout << "\n=== Temperature Prediction Plot ===\n\n";
+    for (int row = chartHeight - 1; row >= 0; --row) {
+        // Display Y-axis label
+        double currentVal = minVal + (range * row / (chartHeight - 1));
+        std::ostringstream labelStream;
+        labelStream << std::fixed << std::setprecision(1) << currentVal;
+        std::string label = labelStream.str();
+
+        // Right-align the label
+        std::cout << std::setw(6) << label << " |";
+
+        // Plot each data point
+        for (int i = 0; i < dataCount; ++i) {
+            if (scaledValues[i] == row) {
+                if (i < static_cast<int>(pastData.size())) {
+                    // Blue '*' + space
+                    std::cout << "\033[34m*\033[0m " << " ";
+                }
+                else {
+                    // Green '*' + space
+                    std::cout << "\033[32m*\033[0m " << " ";
+                }
+            }
+            else {
+                std::cout << "  " << " ";
+            }
+        }
+        std::cout << "\n";
+    }
+
+    // Display X-axis labels (years)
+    std::cout << "       ";
+    for (const auto& p : allData) {
+        // Display only the last two digits
+        int lastTwoDigits = p.first % 100;
+        std::cout << std::setw(2) << lastTwoDigits << " ";
+    }
+    std::cout << "\n";
 }

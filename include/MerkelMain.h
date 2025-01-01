@@ -64,6 +64,8 @@ private:
     // ─────────────────────────────────────────────
     void predictFutureTemperature();
 
+    void plotPrediction(const std::vector<std::pair<int, double>>& pastData, const std::vector<std::pair<int, double>>& predictedData) const;
+
     // ─────────────────────────────────────────────
     // Member Variables
     // ─────────────────────────────────────────────
