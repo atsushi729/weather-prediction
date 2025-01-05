@@ -334,7 +334,7 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
         std::string yLabelStr = yLabelSS.str();
 
         // Align the label to the right
-        std::cout << std::setw(6) << yLabelStr << " | ";
+        std::cout << std::setw(6) << yLabelStr << " ┃ ";
 
         // Plot each candlestick
         for (int i = 0; i < displayCount; ++i)
@@ -377,12 +377,12 @@ void MerkelMain::plotCandlestickData(const std::vector<Candlestick>& candles, in
                 } else {             // Bearish
                     std::cout << "\033[31m"; // Red color
                 }
-                std::cout << " [#] ";
+                std::cout << "  █  ";
                 std::cout << "\033[0m"; // Reset color
             }
             else if (isWickRange) {
                 // Wick part
-                std::cout << "  |  ";
+                std::cout << "  │  ";
             }
             else {
                 std::cout << std::string(COLUMN_WIDTH, ' ');
@@ -571,7 +571,7 @@ void MerkelMain::showYearlyHistogram()
         std::string label = labelStream.str();
 
         // Right-align the label
-        std::cout << std::setw(labelWidth) << label << " | ";
+        std::cout << std::setw(labelWidth) << label << " ┃ ";
 
         // Loop through each year's data
         for (size_t i = 0; i < yearlyData.size(); ++i)
@@ -584,7 +584,7 @@ void MerkelMain::showYearlyHistogram()
             // Note: row == 0 is the baseline
             if (row <= barHeight - 1) {
                 // Draw '#'
-                std::cout << "  #  ";
+                std::cout << "  █  ";
             } else {
                 std::cout << "     ";
             }
@@ -749,7 +749,7 @@ void MerkelMain::plotPrediction(const std::vector<std::pair<int, double>>& pastD
         std::string label = labelStream.str();
 
         // Right-align the label
-        std::cout << std::setw(6) << label << " |";
+        std::cout << std::setw(6) << label << " ┃";
 
         // Plot each data point
         for (int i = 0; i < dataCount; ++i) {
